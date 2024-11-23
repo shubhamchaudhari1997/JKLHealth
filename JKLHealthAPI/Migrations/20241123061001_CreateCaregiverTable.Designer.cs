@@ -4,6 +4,7 @@ using JKLHealthAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JKLHealthAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241123061001_CreateCaregiverTable")]
+    partial class CreateCaregiverTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -107,40 +110,6 @@ namespace JKLHealthAPI.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("JKLHealthAPI.Models.Appointment", b =>
-                {
-                    b.Property<int>("AppointmentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentId"));
-
-                    b.Property<DateTime>("AppointmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AppointmentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CaregiverId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.HasKey("AppointmentId");
-
-                    b.HasIndex("CaregiverId");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("Appointments");
-                });
-
             modelBuilder.Entity("JKLHealthAPI.Models.Caregiver", b =>
                 {
                     b.Property<int>("CaregiverId")
@@ -194,7 +163,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("CaregiverNotes");
+                    b.ToTable("CaregiverNote");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.Patient", b =>
@@ -363,25 +332,6 @@ namespace JKLHealthAPI.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("JKLHealthAPI.Models.Appointment", b =>
-                {
-                    b.HasOne("JKLHealthAPI.Models.Caregiver", "Caregiver")
-                        .WithMany()
-                        .HasForeignKey("CaregiverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("JKLHealthAPI.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Caregiver");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.CaregiverNote", b =>

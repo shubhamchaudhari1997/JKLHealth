@@ -11,6 +11,11 @@ namespace JKLHealthAPI.Data
             
         }
 
+        public DbSet<Caregiver> Caregiver { get; set; }
+        public DbSet<Patient> Patient { get; set; }
+        public DbSet<CaregiverNote> CaregiverNotes { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
