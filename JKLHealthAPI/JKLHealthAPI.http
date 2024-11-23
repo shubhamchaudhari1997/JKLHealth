@@ -1,0 +1,6 @@
+@JKLHealthAPI_HostAddress = http://localhost:5072
+
+GET {{JKLHealthAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
