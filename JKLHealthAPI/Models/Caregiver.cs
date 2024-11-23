@@ -18,6 +18,14 @@ namespace JKLHealthAPI.Models
 
         public bool IsAvailable { get; set; }
 
+        public bool IsActive { get; set; } = true;
+
+        [Required]
+        public string UserId { get; set; }
+
+        [ForeignKey("UserId")]
+        public ApplicationUser User { get; set; }
+
         // Navigation property to link patients
         public ICollection<Patient> Patients { get; set; } = new List<Patient>();
     }

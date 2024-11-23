@@ -29,5 +29,7 @@ namespace JKLHealthAPI.Models.Authentication
 
         [Required(ErrorMessage = "User Type is required")]
         public UserType UserType { get; set; }
+
+        public string? Specialization { get; set; }  // Only for caregivers
     }
 }

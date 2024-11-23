@@ -1,6 +1,7 @@
 ﻿using JKLHealthAPI.Models;
 using JKLHealthAPI.Models.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -37,8 +38,9 @@ namespace JKLHealthAPI.Services
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
+
             if (!result.Succeeded)
-                return new AuthResponse { IsSuccess = false, Message = string.Join(", ", result.Errors.Select(x => x.Description)) };
+                return new AuthResponse { IsSuccess = false, Message = string.Join(", ", result.Errors.Select(x => x.Description)),UserId };
 
             return await GenerateAuthResponseForUserAsync(user);
         }
@@ -84,6 +86,7 @@ namespace JKLHealthAPI.Services
                 // RefreshToken = GenerateRefreshToken(),
                 ExpiryDate = expiry,
                 UserType = user.UserType,
+                UserId = user.Id,
                 Message = "Authentication successful"
             };
         }

@@ -10,6 +10,7 @@ namespace JKLHealthAPI.Models
         public UserType UserType { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsActive { get; set; } = true;
+        public string? Specialization { get; set; }
     }
 
     public enum UserType
