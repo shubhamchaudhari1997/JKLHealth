@@ -24,6 +24,12 @@ namespace JKLHealthAPI.Models
         // Make CaregiverId nullable
         public int? CaregiverId { get; set; }
 
+        //[Required]
+        //public string UserId { get; set; }  // Foreign key to AspNetUsers
+
+        //[ForeignKey("UserId")]
+        //public ApplicationUser User { get; set; }
+
         [ForeignKey("CaregiverId")]
         public Caregiver Caregiver { get; set; }
 

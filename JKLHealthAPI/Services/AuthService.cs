@@ -40,7 +40,7 @@ namespace JKLHealthAPI.Services
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
-                return new AuthResponse { IsSuccess = false, Message = string.Join(", ", result.Errors.Select(x => x.Description)),UserId };
+                return new AuthResponse { IsSuccess = false, Message = string.Join(", ", result.Errors.Select(x => x.Description)) };
 
             return await GenerateAuthResponseForUserAsync(user);
         }
