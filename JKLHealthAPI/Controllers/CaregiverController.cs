@@ -128,6 +128,111 @@ namespace JKLHealthAPI.Controllers
             return Ok(notes);
         }
 
+        // GET: api/Caregiver/{caregiverId}/patients
+        [HttpGet("{caregiverId}/patients")]
+        public async Task<IActionResult> GetAssignedPatients(int caregiverId)
+        {
+            // Check if caregiver exists
+            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found" });
+            }
+
+            // Fetch assigned patients
+            var patients = await _context.Patient
+                .Where(p => p.CaregiverId == caregiverId)
+                .Select(p => new
+                {
+                    p.PatientId,
+                    p.Name,
+                    p.Address,
+                    p.MedicalRecord,
+                    p.DateOfBirth
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Caregiver = caregiver.Name,
+                TotalPatients = patients.Count,
+                Patients = patients
+            });
+        }
+
+        // GET: api/Caregiver/{caregiverId}/appointments
+        [HttpGet("{caregiverId}/appointments")]
+        public async Task<IActionResult> GetAppointmentsByDate(int caregiverId)
+        {
+            // Verify caregiver exists
+            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found" });
+            }
+
+            // Fetch and group appointments by date
+            var appointments = await _context.Appointments
+                .Where(a => a.CaregiverId == caregiverId)
+                .GroupBy(a => a.AppointmentDate.Date)  // Group by the date part only
+                .Select(group => new
+                {
+                    Date = group.Key,
+                    TotalAppointments = group.Count(),
+                    Appointments = group.Select(a => new
+                    {
+                        a.AppointmentId,
+                        a.Notes,
+                        a.PatientId
+                    })
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Caregiver = caregiver.Name,
+                AppointmentsByDate = appointments
+            });
+        }
+
+        [HttpGet("{caregiverId}/today-appointments")]
+        public async Task<IActionResult> GetTodayAppointments(int caregiverId)
+        {
+            // Verify caregiver exists
+            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found" });
+            }
+
+            // Fetch today's appointments
+            var today = DateTime.UtcNow.Date;
+            var appointments = await _context.Appointments
+                .Where(a => a.CaregiverId == caregiverId && a.AppointmentDate.Date == today)
+                .Select(a => new
+                {
+                    a.AppointmentId,
+                    a.AppointmentDate,
+                    a.Notes,
+                    a.PatientId,
+                    PatientName = a.Patient.Name
+                })
+                .ToListAsync();
+
+            if (appointments.Count == 0)
+            {
+                return Ok(new { message = "No appointments for today" });
+            }
+
+            return Ok(new
+            {
+                Caregiver = caregiver.Name,
+                Date = today,
+                TotalAppointments = appointments.Count,
+                Appointments = appointments
+            });
+        }
+
         private bool CaregiverExists(int id)
         {
             return _context.Caregiver.Any(e => e.CaregiverId == id);
