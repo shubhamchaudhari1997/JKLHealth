@@ -4,6 +4,7 @@ using JKLHealthAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JKLHealthAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241124011057_addpatientuser")]
+    partial class addpatientuser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -141,7 +144,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.Caregiver", b =>
@@ -176,7 +179,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Caregiver", (string)null);
+                    b.ToTable("Caregiver");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.CaregiverNote", b =>
@@ -206,7 +209,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("CaregiverNotes", (string)null);
+                    b.ToTable("CaregiverNotes");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.Patient", b =>
@@ -247,7 +250,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Patient", (string)null);
+                    b.ToTable("Patient");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

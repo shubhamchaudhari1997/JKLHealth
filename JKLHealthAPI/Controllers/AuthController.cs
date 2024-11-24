@@ -63,6 +63,19 @@ namespace JKLHealthAPI.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            if (model.UserType == UserType.Patient)
+            {
+                // Create the patient record and link it with the User
+                var patient = new Patient
+                {
+                    Name = $"{model.FirstName} {model.LastName}",
+                    Address = model.Address
+                };
+
+                await _context.Patient.AddAsync(patient);
+                await _context.SaveChangesAsync();
+            }
+
             //if (!ModelState.IsValid)
             //    return BadRequest(ModelState);
 
