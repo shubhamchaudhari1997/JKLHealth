@@ -141,7 +141,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.Caregiver", b =>
@@ -176,7 +176,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Caregiver", (string)null);
+                    b.ToTable("Caregiver");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.CaregiverNote", b =>
@@ -206,7 +206,7 @@ namespace JKLHealthAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("CaregiverNotes", (string)null);
+                    b.ToTable("CaregiverNotes");
                 });
 
             modelBuilder.Entity("JKLHealthAPI.Models.Patient", b =>
@@ -225,7 +225,7 @@ namespace JKLHealthAPI.Migrations
                     b.Property<int?>("CaregiverId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("DateOfBirth")
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("MedicalRecord")
@@ -237,17 +237,11 @@ namespace JKLHealthAPI.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("PatientId");
 
                     b.HasIndex("CaregiverId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Patient", (string)null);
+                    b.ToTable("Patient");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -438,15 +432,7 @@ namespace JKLHealthAPI.Migrations
                         .WithMany("Patients")
                         .HasForeignKey("CaregiverId");
 
-                    b.HasOne("JKLHealthAPI.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Caregiver");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
