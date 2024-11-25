@@ -17,11 +17,18 @@ namespace JKLHealthAPI.Controllers
             _context = context;
         }
 
-        // GET: api/Caregiver
-        [HttpGet]
+        [HttpGet("GetCaregivers")]
         public async Task<ActionResult<IEnumerable<Caregiver>>> GetCaregivers()
         {
-            return await _context.Caregiver.Include(c => c.Patients).ToListAsync();
+            try
+            {
+                var caregivers = await _context.Caregiver.ToListAsync();
+                return Ok(caregivers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching caregivers", Details = ex.Message });
+            }
         }
 
         // GET: api/Caregiver/{id}
@@ -52,15 +59,31 @@ namespace JKLHealthAPI.Controllers
 
         // PUT: api/Caregiver/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCaregiver(int id, Caregiver caregiver)
+        public async Task<IActionResult> PutCaregiver(int id, CaregiverUpdateDto caregiverDto)
         {
-            if (id != caregiver.CaregiverId)
+            // Find the existing caregiver
+            var caregiver = await _context.Caregiver.FindAsync(id);
+            if (caregiver == null)
             {
-                return BadRequest();
+                return NotFound(new { message = "Caregiver not found." });
             }
 
-            _context.Entry(caregiver).State = EntityState.Modified;
+            // Find the user in the Identity table
+            var user = await _context.Users.FindAsync(caregiver.UserId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User details not found." });
+            }
 
+            // Update caregiver entity fields
+            caregiver.Name = caregiverDto.Name;
+            caregiver.Specialization = caregiverDto.Specialization;
+
+            // Update user entity fields (Identity table)
+            user.PhoneNumber = caregiverDto.PhoneNumber;
+            user.Address = caregiverDto.Address;  // Ensure Address is a custom property in ApplicationUser
+
+            // Save changes to both entities
             try
             {
                 await _context.SaveChangesAsync();
@@ -69,7 +92,7 @@ namespace JKLHealthAPI.Controllers
             {
                 if (!CaregiverExists(id))
                 {
-                    return NotFound();
+                    return NotFound(new { message = "Concurrency error: Caregiver not found." });
                 }
                 else
                 {
@@ -79,6 +102,7 @@ namespace JKLHealthAPI.Controllers
 
             return NoContent();
         }
+
 
         // DELETE: api/Caregiver/{id}
         [HttpDelete("{id}")]
@@ -128,30 +152,74 @@ namespace JKLHealthAPI.Controllers
             return Ok(notes);
         }
 
-        // GET: api/Caregiver/{caregiverId}/patients
-        [HttpGet("{caregiverId}/patients")]
-        public async Task<IActionResult> GetAssignedPatients(int caregiverId)
+        // GET: api/caregiver/details/{userId}
+        [HttpGet("details/{userId}")]
+        public async Task<IActionResult> GetCaregiverByUserId(string userId)
         {
+            // Fetch caregiver based on UserId
+            var caregiver = await _context.Caregiver
+                                          .Include(c => c.Patients)  // Include related data if necessary
+                                          .FirstOrDefaultAsync(c => c.UserId == userId);
+
             // Check if caregiver exists
-            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
             if (caregiver == null)
             {
-                return NotFound(new { message = "Caregiver not found" });
+                return NotFound(new { message = "Caregiver not found for the provided UserId." });
             }
 
-            // Fetch assigned patients
-            var patients = await _context.Patient
-                .Where(p => p.CaregiverId == caregiverId)
-                .Select(p => new
-                {
-                    p.PatientId,
-                    p.Name,
-                    p.Address,
-                    p.MedicalRecord,
-                    p.DateOfBirth
-                })
-                .ToListAsync();
+            // Fetch user details from ApplicationUser (AspNetUsers table)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
+            // Check if user exists
+            if (user == null)
+            {
+                return NotFound(new { message = "User details not found for the provided UserId." });
+            }
+
+
+            // Create and return a structured response
+            return Ok(new
+            {
+                CaregiverId = caregiver.CaregiverId,
+                Name = caregiver.Name,
+                Specialization = caregiver.Specialization,
+                IsAvailable = caregiver.IsAvailable,
+                IsActive = caregiver.IsActive,
+                TotalPatients = caregiver.Patients?.Count ?? 0,  // Total related patients count
+                PhoneNumber = user.PhoneNumber,  // Fetch from AspNetUsers
+                Address = user.Address
+            });
+        }
+
+
+        // GET: api/Caregiver/patients/{userId}
+        [HttpGet("patients/{userId}")]
+        public async Task<IActionResult> GetPatientsByUserId(string userId)
+        {
+            // Find the caregiver by UserId
+            var caregiver = await _context.Caregiver
+                                          .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            // Check if caregiver exists
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found for the provided UserId." });
+            }
+
+            // Fetch patients assigned to this caregiver
+            var patients = await _context.Patient
+                                         .Where(p => p.CaregiverId == caregiver.CaregiverId)
+                                         .Select(p => new
+                                         {
+                                             p.PatientId,
+                                             p.Name,
+                                             p.Address,
+                                             p.MedicalRecord,
+                                             p.DateOfBirth
+                                         })
+                                         .ToListAsync();
+
+            // Return the caregiver's name and the assigned patients
             return Ok(new
             {
                 Caregiver = caregiver.Name,
@@ -160,20 +228,22 @@ namespace JKLHealthAPI.Controllers
             });
         }
 
-        // GET: api/Caregiver/{caregiverId}/appointments
-        [HttpGet("{caregiverId}/appointments")]
-        public async Task<IActionResult> GetAppointmentsByDate(int caregiverId)
+        // GET: api/Caregiver/appointments/{userId}
+        [HttpGet("appointments/{userId}")]
+        public async Task<IActionResult> GetAppointmentsByUserId(string userId)
         {
+            // Find the caregiver by UserId
+            var caregiver = await _context.Caregiver.FirstOrDefaultAsync(c => c.UserId == userId);
+
             // Verify caregiver exists
-            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
             if (caregiver == null)
             {
-                return NotFound(new { message = "Caregiver not found" });
+                return NotFound(new { message = "Caregiver not found for the provided UserId." });
             }
 
             // Fetch and group appointments by date
             var appointments = await _context.Appointments
-                .Where(a => a.CaregiverId == caregiverId)
+                .Where(a => a.CaregiverId == caregiver.CaregiverId)
                 .GroupBy(a => a.AppointmentDate.Date)  // Group by the date part only
                 .Select(group => new
                 {
@@ -182,33 +252,40 @@ namespace JKLHealthAPI.Controllers
                     Appointments = group.Select(a => new
                     {
                         a.AppointmentId,
+                        a.PatientId,
                         a.Notes,
-                        a.PatientId
+                        a.AppointmentDate
                     })
                 })
                 .ToListAsync();
 
+            // Return structured response
             return Ok(new
             {
                 Caregiver = caregiver.Name,
+                TotalAppointments = appointments.Sum(a => a.TotalAppointments),
                 AppointmentsByDate = appointments
             });
         }
 
-        [HttpGet("{caregiverId}/today-appointments")]
-        public async Task<IActionResult> GetTodayAppointments(int caregiverId)
+
+        // GET: api/Caregiver/today-appointments/{userId}
+        [HttpGet("today-appointments/{userId}")]
+        public async Task<IActionResult> GetTodayAppointmentsByUserId(string userId)
         {
+            // Find the caregiver by UserId
+            var caregiver = await _context.Caregiver.FirstOrDefaultAsync(c => c.UserId == userId);
+
             // Verify caregiver exists
-            var caregiver = await _context.Caregiver.FindAsync(caregiverId);
             if (caregiver == null)
             {
-                return NotFound(new { message = "Caregiver not found" });
+                return NotFound(new { message = "Caregiver not found for the provided UserId." });
             }
 
             // Fetch today's appointments
             var today = DateTime.UtcNow.Date;
             var appointments = await _context.Appointments
-                .Where(a => a.CaregiverId == caregiverId && a.AppointmentDate.Date == today)
+                .Where(a => a.CaregiverId == caregiver.CaregiverId && a.AppointmentDate.Date == today)
                 .Select(a => new
                 {
                     a.AppointmentId,
@@ -219,11 +296,13 @@ namespace JKLHealthAPI.Controllers
                 })
                 .ToListAsync();
 
-            if (appointments.Count == 0)
+            // Return a message if no appointments are found
+            if (!appointments.Any())
             {
-                return Ok(new { message = "No appointments for today" });
+                return Ok(new { message = "No appointments for today." });
             }
 
+            // Return structured response
             return Ok(new
             {
                 Caregiver = caregiver.Name,
@@ -232,6 +311,47 @@ namespace JKLHealthAPI.Controllers
                 Appointments = appointments
             });
         }
+
+        [HttpPatch("{id}/availability")]
+        public async Task<IActionResult> UpdateAvailability(int id, [FromBody] UpdateAvailabilityDto availabilityDto)
+        {
+            // Validate the input
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find the caregiver by ID
+            var caregiver = await _context.Caregiver.FindAsync(id);
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found." });
+            }
+
+            // Update the availability status
+            caregiver.IsAvailable = availabilityDto.IsAvailable;
+
+            // Save changes to the database
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // Log the exception or handle it based on your needs
+                return StatusCode(500, new { message = "An error occurred while updating availability.", details = ex.Message });
+            }
+
+            // Return success response
+            return Ok(new
+            {
+                message = "Availability updated successfully.",
+                caregiverId = caregiver.CaregiverId,
+                isAvailable = caregiver.IsAvailable
+            });
+        }
+
+
 
         private bool CaregiverExists(int id)
         {

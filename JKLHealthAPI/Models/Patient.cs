@@ -15,20 +15,22 @@ namespace JKLHealthAPI.Models
         [MaxLength(200)]
         public string Address { get; set; }
 
+        public string? Email { get; set; }
+
         [Required]
         public string MedicalRecord { get; set; }
 
         [DataType(DataType.Date)]
         public DateTime DateOfBirth { get; set; }
 
+        [Required]
+        public string UserId { get; set; }
+
+        [ForeignKey("UserId")]
+        public ApplicationUser User { get; set; }
+
         // Make CaregiverId nullable
         public int? CaregiverId { get; set; }
-
-        //[Required]
-        //public string UserId { get; set; }  // Foreign key to AspNetUsers
-
-        //[ForeignKey("UserId")]
-        //public ApplicationUser User { get; set; }
 
         [ForeignKey("CaregiverId")]
         public Caregiver Caregiver { get; set; }

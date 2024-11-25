@@ -87,7 +87,8 @@ namespace JKLHealthAPI.Services
                 ExpiryDate = expiry,
                 UserType = user.UserType,
                 UserId = user.Id,
-                Message = "Authentication successful"
+                Message = "Authentication successful",
+                Email = user.Email
             };
         }
 
