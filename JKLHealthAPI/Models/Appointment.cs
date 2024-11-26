@@ -11,10 +11,10 @@ namespace JKLHealthAPI.Models
         [Required]
         [DataType(DataType.DateTime)]
         public DateTime AppointmentDate { get; set; }  // The date and time of the appointment
-
-        [Required]
+       
         public string AppointmentType { get; set; }  // e.g., Consultation, Follow-up, Check-up
 
+        //  we need to use AppointmentType as status
         public string Notes { get; set; }  // Optional notes regarding the appointment
 
         // Foreign key to the Patient
@@ -29,4 +29,5 @@ namespace JKLHealthAPI.Models
         [ForeignKey("CaregiverId")]
         public Caregiver Caregiver { get; set; }
     }
+
 }

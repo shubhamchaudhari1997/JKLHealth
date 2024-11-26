@@ -353,6 +353,42 @@ namespace JKLHealthAPI.Controllers
 
 
 
+        [HttpGet("caregiverappointments/{userId}")]
+        public async Task<IActionResult> GetCaregiverAppointments(string userId)
+        {
+            // Find the caregiver by UserId
+            var caregiver = await _context.Caregiver.FirstOrDefaultAsync(c => c.UserId == userId);
+
+            // Verify caregiver exists
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver not found for the provided UserId." });
+            }
+
+            // Fetch appointments, excluding "Completed" status
+            var appointments = await _context.Appointments
+                .Where(a => a.CaregiverId == caregiver.CaregiverId && a.AppointmentType != "Completed")
+                .Select(a => new
+                {
+                    a.AppointmentId,
+                    a.AppointmentDate,
+                    Status = a.AppointmentType,  // Map AppointmentType to Status in response
+                    a.Notes,
+                    PatientName = a.Patient.Name  // Include patient's name for context
+                })
+                .ToListAsync();
+
+            // Check if there are any appointments left after filtering
+            if (!appointments.Any())
+            {
+                return NotFound(new { message = "No pending appointments found for this caregiver." });
+            }
+
+            // Return a flat list of appointments
+            return Ok(appointments);
+        }
+
+
         private bool CaregiverExists(int id)
         {
             return _context.Caregiver.Any(e => e.CaregiverId == id);

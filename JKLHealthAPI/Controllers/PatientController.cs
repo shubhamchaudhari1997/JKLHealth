@@ -1,7 +1,9 @@
 ﻿using JKLHealthAPI.Data;
 using JKLHealthAPI.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 namespace JKLHealthAPI.Controllers
@@ -72,6 +74,7 @@ namespace JKLHealthAPI.Controllers
                     patient.Name,
                     patient.Address,
                     patient.DateOfBirth,
+                    patient.MedicalRecord,
                     Caregiver = patient.Caregiver != null ? new
                     {
                         patient.Caregiver.CaregiverId,
@@ -142,5 +145,77 @@ namespace JKLHealthAPI.Controllers
 
             return NoContent(); // Successful deletion with no content in response
         }
+
+
+        // return the user details from Users 
+        [HttpGet("details/{userId}")]
+        public async Task<IActionResult> GetUserById(string userId)
+        {
+            // Fetch the user based on userId from the Identity table
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            // Check if the user exists
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            // Combine the first name and last name of the user
+            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+
+            // Search for a patient whose name matches the user's full name
+            var patient = await _context.Patient.FirstOrDefaultAsync(p => p.Name == fullName);
+
+            // Check if the patient record exists
+            if (patient == null)
+            {
+                return NotFound(new { message = "Patient record not found for the user." });
+            }
+
+            // Fetch the caregiver based on the CaregiverId from the patient record
+            var caregiver = await _context.Caregiver.FirstOrDefaultAsync(c => c.CaregiverId == patient.CaregiverId);
+
+            // Check if the caregiver record exists
+            if (caregiver == null)
+            {
+                return NotFound(new { message = "Caregiver record not found for the patient." });
+            }
+
+            // Return user, patient, and caregiver details
+            return Ok(new
+            {
+                UserDetails = new
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.UserName,
+                    user.Email,
+                    user.Address,
+                    user.PhoneNumber,
+                    user.UserType,
+                    user.IsActive,
+                    user.CreatedAt
+                },
+                PatientDetails = new
+                {
+                    patient.PatientId,
+                    patient.Name,
+                    patient.Address,
+                    patient.MedicalRecord,
+                    patient.DateOfBirth,
+                    patient.CaregiverId
+                },
+                CaregiverDetails = new
+                {
+                    caregiver.CaregiverId,
+                    caregiver.Name,
+                    caregiver.Specialization,
+                    caregiver.IsAvailable,
+                    caregiver.IsActive
+                }
+            });
+        }
     }
 }
+

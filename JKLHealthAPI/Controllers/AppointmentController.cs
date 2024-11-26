@@ -24,6 +24,37 @@ namespace JKLHealthAPI.Controllers
             return await _context.Appointments.Include(a => a.Patient).Include(a => a.Caregiver).ToListAsync();
         }
 
+        [HttpGet("patient/{patientId}")]
+public async Task<ActionResult<IEnumerable<Appointment>>> GetAppointmentsByPatientId(int patientId)
+{
+    // Fetch appointments for the given PatientId
+    var appointments = await _context.Appointments
+        .Where(a => a.PatientId == patientId)
+        .Include(a => a.Patient)
+        .Include(a => a.Caregiver)
+        .ToListAsync();
+
+    // Check if any appointments exist
+    if (!appointments.Any())
+    {
+        return NotFound(new { message = "No appointments found for the specified patient." });
+    }
+
+    // Map the appointments to a simplified DTO if necessary
+    var appointmentDtos = appointments.Select(a => new
+    {
+        a.AppointmentId,
+        a.AppointmentDate,
+        status = a.AppointmentType,
+        a.Notes,
+        CaregiverName = a.Caregiver?.Name,
+        PatientName = a.Patient?.Name
+    });
+
+    return Ok(appointmentDtos);
+}
+
+
         // GET: api/Appointment/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Appointment>> GetAppointment(int id)
@@ -41,10 +72,20 @@ namespace JKLHealthAPI.Controllers
             return appointment;
         }
 
-        // POST: api/Appointment
-        [HttpPost]
-        public async Task<ActionResult<Appointment>> PostAppointment(Appointment appointment)
+        [HttpPost("PostAppointment")]
+        public async Task<ActionResult<Appointment>> PostAppointment([FromBody] AppointmentDto appointmentDto)
         {
+            // Map the DTO to the Appointment entity
+            var appointment = new Appointment
+            {
+                AppointmentDate = appointmentDto.AppointmentDate,
+                AppointmentType = appointmentDto.Status,  // Map Status to AppointmentType
+                Notes = appointmentDto.Notes,
+                PatientId = appointmentDto.PatientId,
+                CaregiverId = appointmentDto.CaregiverId
+            };
+
+            // Add and save the new appointment
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
@@ -80,6 +121,35 @@ namespace JKLHealthAPI.Controllers
 
             return NoContent();
         }
+
+        // PUT: api/Appointment/UpdateStatus/{appointmentId}
+        [HttpPut("UpdateStatus/{appointmentId}")]
+        public async Task<IActionResult> UpdateAppointmentStatus(int appointmentId, [FromBody] UpdateStatusRequest request)
+        {
+            // Find the appointment by ID
+            var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            // Check if the appointment exists
+            if (appointment == null)
+            {
+                return NotFound(new { message = "Appointment not found." });
+            }
+
+            // Update the status
+            appointment.AppointmentType = request.Status;
+
+            // Save changes
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Appointment status updated successfully." });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(500, new { error = "Database error occurred.", details = dbEx.Message });
+            }
+        }
+
 
         // DELETE: api/Appointment/{id}
         [HttpDelete("{id}")]
